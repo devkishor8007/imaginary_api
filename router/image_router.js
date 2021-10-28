@@ -38,39 +38,56 @@ router.get("/:id", async (req, res) => {
   res.status(200).json({ success: true, data: getData });
 });
 
-router.post("/", uploadSet.single("image"), async (req, res) => {
-  const file = req.file;
-  if (!file) return res.status(400).send("No Image is in this request");
+router.post("/", uploadSet.array("images", 10), async (req, res) => {
+  const files = req.files;
+  if (!files) return res.status(400).send("No Image is in this request");
 
-  const fileName = req.file.filename;
+  let getImagesList = [];
+
   const basePathUrl = `${req.protocol}://${req.get(
     "host"
   )}/public/myimagesupload/`;
+
+  if (files) {
+    files.map((file) => {
+      getImagesList.push(`${basePathUrl}${file.filename}`);
+    });
+  }
+
   const { name } = req.body;
+
   const loadImage = await ImageData.create({
     name: name,
-    image: `${basePathUrl}${fileName}`,
+    images: getImagesList,
   });
+
+  if (!loadImage) return res.status(400).send("Can't be post");
+
   res.status(200).json({ success: true, data: loadImage });
 });
 
-router.put("/:id", uploadSet.single("image"), async (req, res) => {
-  const file = req.file;
-  if (!file) return res.status(400).send("No Image is in this request");
+router.put("/:id", uploadSet.array("images", 10), async (req, res) => {
+  const files = req.files;
+  if (!files) return res.status(400).send("No Image is in this request");
 
-  let updateImage;
-  const fileName = req.file.filename;
+  let updateImage = [];
+
   const basePathUrl = `${req.protocol}://${req.get(
     "host"
   )}/public/myimagesupload/`;
-  updateImage = `${basePathUrl}${fileName}`;
+
+  if (files) {
+    files.map((file) => {
+      updateImage.push(`${basePathUrl}${file.filename}`);
+    });
+  }
 
   const id = req.params.id;
   const updateData = await ImageData.findByIdAndUpdate(
     id,
     {
       name: req.body.name,
-      image: updateImage,
+      images: updateImage,
     },
     {
       new: true,
@@ -82,11 +99,11 @@ router.put("/:id", uploadSet.single("image"), async (req, res) => {
   res.status(200).json({ success: true, data: updateData });
 });
 
-router.delete("/:id", uploadSet.single("image"), async (req, res) => {
+router.delete("/:id", async (req, res) => {
   const id = req.params.id;
-  const updateData = await ImageData.findByIdAndDelete(id);
+  const deleteImage = await ImageData.findByIdAndDelete(id);
 
-  if (!updateData) res.status(400).send("cannot be deleted");
+  if (!deleteImage) res.status(400).send("cannot be deleted");
 
   res.status(200).json({ success: true, data: "delete" });
 });
